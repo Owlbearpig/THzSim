@@ -4,6 +4,32 @@ from functions import do_fft, do_ifft, unwrap, annot_max
 from scipy.constants import c as c0
 from mpl_settings import *
 
+# signal
+dt = 0.001  # dt = 0.05 # sampling time
+frame_size = 100  # sampling window
+sigma = 0.2  # pulse width
+noise_factor = 1E-10
+pulse_shift = 5  # time axis shift
+
+# sample time shift
+sam_shift = 0.105  # PTFE 31.5 um
+# sam_shift = 0.138  # RDX 41.4 um
+# sam_shift = 0.050
+# sam_shift = 0
+
+n_min, n_max = 1.4, 1.41
+#k_min, k_max = 0.00, 0.035
+k_min, k_max = 0.00, 0.0250
+
+# absorption peak
+width = 5E-3
+amplitude = 5E-4
+# amplitude = 0.0
+
+# incident angle
+theta_i = 8 * np.pi / 180
+
+
 fig, (ax0_cri, ax1_cri, ax2_cri) = plt.subplots(3, 1)
 ax0_cri.set_ylabel("Real part")
 ax2_cri.set_xlabel("Frequency (THz)")
@@ -25,38 +51,18 @@ ax2_sig.set_xlabel("Frequency (THz)")
 ax2_sig.set_ylabel("Amplitude (dB)")
 ax1_sig.set_ylabel("Phase (rad)")
 ax1_sig.set_xlim((-0.1, 8))
-
-# signal
-dt = 0.002  # dt = 0.05 # sampling time
-frame_size = 10  # plus minus (2N)
-sigma = 0.2  # pulse width
-noise_factor = 1E-10
-pulse_shift = 0  # time axis shift
-
-# sample time shift
-sam_shift = 0.105  # PTFE 31.5 um
-sam_shift = 0.138  # RDX 41.4 um
-# sam_shift = 0.050
-# sam_shift = 0
-
-k_max, n_max = 0.06, 1.64
-
-# absorption peak
-width = 0.05
-amplitude = 0.005
-
-# incident angle
-theta_i = 8 * np.pi / 180
+ax1_sig.set_ylim((-np.pi, np.pi))
+ax2_sig.set_xlim((-0.1, 15))
 
 
 def sample_sim(f, en_plot=True, pol="s"):
     n0 = 1 + 1j * 0
 
     f_max = int(np.argmin(np.abs(f - 15.0)))
-    n1_r, n1_i = np.zeros_like(f), np.zeros_like(f)
+    n1_r, n1_i = np.ones_like(f), np.zeros_like(f)
 
-    n1_r[:f_max] = np.linspace(1.4, n_max, f_max)
-    n1_i[:f_max] = np.linspace(0.00, k_max, f_max)
+    n1_r[:f_max] = np.linspace(n_min, n_max, f_max)
+    n1_i[:f_max] = np.linspace(k_min, k_max, f_max)
 
     peak = (1 / np.pi) * (width / ((f - 1) ** 2 + width ** 2))
     n1_i = n1_i + peak * amplitude
@@ -95,24 +101,30 @@ def shift_signal(y_td, shift):
 
 def correlation(y0_td, y1_td):
     t = y0_td[:, 0].real
-    scale = 1 / len(t)
-    dt_ = np.mean(np.diff(t))
+    scale = 1/len(t)
+    """
+    for i in range(-3, 4):
+        val = np.sum(y1_td[:, 1].real * np.roll(y0_td[:, 1].real, i))
+        print(i, val)
+    """
+    tau = np.arange(-int(5/dt), int(5/dt))
 
-    tau = np.arange(-5, 5, dt_)
-
-    corr_ = np.zeros_like(tau)
-    for t_idx in range(len(tau)):
-        corr_[t_idx] = scale * np.sum(y1_td[:, 1].real * np.roll(y0_td[:, 1].real, t_idx - int(5 / dt_)))
+    corr_ = np.zeros_like(tau, dtype=float)
+    for idx, t_idx in enumerate(tau):
+        corr_[idx] = scale * np.sum(y1_td[:, 1].real * np.roll(y0_td[:, 1].real, t_idx))
+    tau = tau * dt
 
     # corr_ = np.abs(corr_)
     max_idx = np.argmax(corr_)
-    print(f"Correlation maximum at {round(tau[max_idx], 5)} ps ({tau[max_idx]})")
-    print(f"({round(tau[max_idx], 5) * c0 * 1E-6} um)")
+    print(f"Correlation maximum at {round(tau[max_idx], 5)} ps ({tau[max_idx]} ps)", end="")
+    print(f" ({round(tau[max_idx], 5) * c0 * 1E-6} um)")
+    print(f"True sample misplacement: {sam_shift} ps", end="")
+    print(f" ({sam_shift * c0 * 1E-6} um)")
 
     fig, ax0 = plt.subplots(1, 1)
     ax0.plot(tau, corr_)
     annot_max(tau, corr_, ax0, x_unit="ps")
-    ax0.set_xlabel("Time (ps)")
+    ax0.set_xlabel("Relative time shift (ps)")
     ax0.set_ylabel("Cross-correlation")
     ax0.set_ylim((np.min(corr_)*1.2, np.max(corr_)*1.5))
 
@@ -122,12 +134,10 @@ def correlation(y0_td, y1_td):
 def ref_signal():
     # simulated (reference) signal with noise
 
-    t = np.arange(-frame_size, frame_size + dt, dt)
-    if len(t) % 2 == 0:
-        t = np.arange(-frame_size, frame_size, dt)
+    t = np.arange(0, frame_size, dt)
 
-    t += pulse_shift  # shift away from 0
-    y = t * exp(-(t / sigma) ** 2)
+    t_ = t - pulse_shift
+    y = t_ * exp(-(t_ / sigma) ** 2)
     y += np.random.random((len(t))) * noise_factor
 
     return array([t, y], dtype=float).T
@@ -144,15 +154,17 @@ def extract_cri(ref_fd_, sam_fd_, corr_=None):
     if (corr_ is not None) and (sam_shift != 0):
         max_idx = np.argmax(corr_[:, 1])
         dtau = corr_[max_idx, 0]
-        dtau += dt / 10
+        # dtau += dt / 10
         phi_c = 2*np.pi*dtau*f
     else:
         print("No correction required")
         phi_c = np.zeros_like(f)
 
-    phi_a = phi_m - phi_c
+    phi_a = phi_m + phi_c
+
+    ax1_sig.plot(f, phi_m, label=f"phi_m ({sam_shift} ps)")
     ax1_sig.plot(f, phi_c, label="phi_c")
-    ax1_sig.plot(f, phi_a, label="Phase after correction")
+    ax1_sig.plot(f, phi_a, label="phi_a (Phase after correction)")
 
     n = (1 - amp_ratio ** 2) / (1 + amp_ratio ** 2 - 2 * amp_ratio * cos(phi_a))
     n[0] = n[1]  # DC
@@ -178,6 +190,7 @@ def main():
     t = ref_td[:, 0].real
     ref_fd = do_fft(ref_td)
     f = ref_fd[:, 0].real
+
     r = sample_sim(f, en_plot=True, pol="p")
 
     sam_fd = array([f, r * ref_fd[:, 1]]).T
@@ -203,10 +216,9 @@ def main():
     ax0_sig.plot(t, sam_td[:, 1].real, label="Sample dt=0 ps")
     ax0_sig.plot(t, sam_td_shifted[:, 1].real, label=f"Sample dt={sam_shift} ps")
 
-    ax1_sig.plot(phi_ref[:, 0], phi_ref[:, 1], label="Reference")
-    ax1_sig.plot(phi_sam[:, 0], phi_sam[:, 1], label="Sample dt=0")
-    ax1_sig.plot(phi_sam_shifted[:, 0], phi_sam_shifted[:, 1], label=f"Sample dt={sam_shift} ps")
-    ax1_sig.plot(f, phi_diff, label=f"Difference phi_sam_shifted - phi_ref ({sam_shift} ps)")
+    # ax1_sig.plot(phi_ref[:, 0], phi_ref[:, 1], label="Reference")
+    # ax1_sig.plot(phi_sam[:, 0], phi_sam[:, 1], label="Sample dt=0")
+    # ax1_sig.plot(phi_sam_shifted[:, 0], phi_sam_shifted[:, 1], label=f"Sample dt={sam_shift} ps")
 
     ax2_sig.plot(f, 20 * np.log10(np.abs(ref_fd[:, 1])), label="Reference")
     ax2_sig.plot(f, 20 * np.log10(np.abs(sam_fd[:, 1])), label="Sample dt=0")
@@ -219,7 +231,7 @@ if __name__ == '__main__':
     ax1_cri.legend()
     ax2_cri.legend()
     ax0_sig.legend()
-    ax1_sig.legend()
-    ax2_sig.legend()
+    ax1_sig.legend(loc='upper right')
+    ax2_sig.legend(loc='upper right')
 
     plt.show()
