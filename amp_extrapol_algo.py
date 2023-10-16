@@ -24,8 +24,7 @@ def main():
     f_axis = ref_fd[:, 0].real
 
     t = t_sample_sim(f_axis, en_plot=True)
-    phi_shift = np.exp(-1j*d0*2*pi*f_axis/c_THz)
-    phi_shift *= 1 # np.exp(-1j*2*pi*f_axis*pulse_shift)
+    phi_shift = np.exp(-1j * d0 * 2 * pi * f_axis / c_THz)
 
     sam_fd = array([f_axis, t * ref_fd[:, 1] * phi_shift]).T
 
@@ -33,6 +32,14 @@ def main():
 
     ax0_sig.plot(t_axis, sam_td[:, 1], label="Sample")
     ax2_sig.plot(f_axis, to_db(sam_fd[:, 1]), label="Sample")
+
+    phi_s = unwrap(sam_fd, one_d=True)
+    phi_r = unwrap(ref_fd, one_d=True)
+
+    ax1_sig.plot(f_axis, phi_r, label="Reference")
+    ax1_sig.plot(f_axis, phi_s, label="Sample")
+
+
 
 
 if __name__ == '__main__':

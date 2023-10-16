@@ -18,9 +18,9 @@ def do_fft(data_td):
     data_td = nan_to_num(data_td)
 
     dt = float(np.mean(np.diff(data_td[:, 0].real)))
-    freqs, data_fd = rfftfreq(n=len(data_td[:, 0]), d=dt), rfft(data_td[:, 1])
+    f_axis, data_fd = rfftfreq(n=len(data_td[:, 0]), d=dt), rfft(data_td[:, 1])
 
-    return array([freqs, data_fd]).T
+    return array([f_axis, data_fd]).T
 
 
 def do_ifft(data_fd, t_=None):
@@ -41,7 +41,7 @@ def do_ifft(data_fd, t_=None):
     return array([t_, y_td]).T
 
 
-def unwrap(data_fd):
+def unwrap(data_fd, one_d=False):
     if data_fd.ndim == 2:
         y = nan_to_num(data_fd[:, 1])
     else:
@@ -49,7 +49,10 @@ def unwrap(data_fd):
 
     phi = np.asarray(np.unwrap(np.angle(y)), dtype=float)
 
-    return array([data_fd[:, 0].real, phi], dtype=float).T
+    if one_d:
+        return array(phi, dtype=float)
+    else:
+        return array([data_fd[:, 0].real, phi], dtype=float).T
 
 
 def annot_max(x, y, ax=None, x_unit=None):

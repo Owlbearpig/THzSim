@@ -13,7 +13,7 @@ dt = 0.001  # dt = 0.05 # sampling time
 frame_size = 100  # sampling window
 sigma = 0.2  # pulse width
 noise_factor = 1E-10
-pulse_shift = 10  # time axis shift (ps)
+pulse_shift = 20  # time axis shift (ps)
 
 # sample time shift
 sam_shift = 0.105  # PTFE 31.5 um
@@ -56,7 +56,7 @@ ax2_sig.set_xlabel("Frequency (THz)")
 ax2_sig.set_ylabel("Amplitude (dB)")
 ax1_sig.set_ylabel("Phase (rad)")
 ax1_sig.set_xlim((-0.1, 8))
-ax1_sig.set_ylim((-np.pi, np.pi))
+# ax1_sig.set_ylim((-np.pi, np.pi))
 ax2_sig.set_xlim((-0.1, 15))
 
 
@@ -133,13 +133,12 @@ def ref_signal():
     y = t_ * exp(-(t_ / sigma) ** 2)
     y += np.random.random((len(t))) * noise_factor
 
-    ax0_sig.plot(t, y, label="Reference")
-
     ref_td_ = array([t, y], dtype=float).T
 
     ref_fd_ = do_fft(ref_td_)
     y_fd_db = to_db(ref_fd_)
 
+    ax0_sig.plot(t, y, label="Reference")
     ax2_sig.plot(ref_fd_[:, 0].real, y_fd_db, label="Reference")
 
     return ref_td_, ref_fd_
