@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 from functions import do_fft, to_db
 from numpy import exp, array, cos, sin, arcsin
@@ -23,7 +24,7 @@ sam_shift = 0.105  # PTFE 31.5 um
 
 n_min, n_max = 1.4, 1.45
 # k_min, k_max = 0.00, 0.035
-k_min, k_max = 0.00, 0.035
+k_min, k_max = 0.07, 0.09
 
 # absorption peak
 width = 5E-3
@@ -44,7 +45,7 @@ ax0_cri.set_xlim((-0.1, 8))
 ax1_cri.set_xlim((-0.1, 8))
 ax2_cri.set_xlim((-0.1, 8))
 ax0_cri.set_ylim((0.5, 3.5))
-ax1_cri.set_ylim((-0.01, 0.06))
+ax1_cri.set_ylim((-0.01, 0.15))
 ax2_cri.set_ylim((-1, 110))
 
 fig_, (ax0_sig, ax1_sig, ax2_sig) = plt.subplots(3, 1)
@@ -59,6 +60,9 @@ ax1_sig.set_xlim((-0.1, 8))
 # ax1_sig.set_ylim((-np.pi, np.pi))
 ax2_sig.set_xlim((-0.1, 15))
 
+fig_, (axa) = plt.subplots(1, 1)
+axa.set_xlabel("Frequency (THz)")
+axa.set_xlim((-0.1, 8))
 
 def refl_sample_sim(f, en_plot=True, pol="s"):
     n0 = 1 + 1j * 0
@@ -117,8 +121,8 @@ def t_sample_sim(f, en_plot=False):
     alpha = 10 * 4 * np.pi * n1.imag * f / c_THz
 
     if en_plot:
-        ax0_cri.plot(f, n1.real, label="Real part of n1 (truth)")
-        ax1_cri.plot(f, n1.imag, label="Imaginary part of n1 (truth)")
+        ax0_cri.plot(f, n1.real, label="n actual")
+        ax1_cri.plot(f, n1.imag, label="k actual")
         ax2_cri.plot(f, alpha, label="Absorption coefficient (truth)")
 
     return t_

@@ -14,6 +14,37 @@ def shift_signal(y_td, shift):
     return array([t_, y], dtype=float).T
 
 
+
+# Polynomial Regression
+def polyfit(x, y, degree=None, remove_worst_outlier=False):
+    if degree is None:
+        degree = 1
+
+    def _fit(x_, y_):
+        res = {}
+
+        coeffs = np.polyfit(x_, y_, degree)
+
+        # Polynomial Coefficients
+        res['polynomial'] = coeffs.tolist()
+
+        # r-squared
+        p = np.poly1d(coeffs)
+        # fit values, and mean
+        yhat = p(x_)  # or [p(z) for z in x]
+        ybar = np.sum(y_) / len(y_)  # or sum(y)/len(y)
+        ssreg = np.sum((yhat - ybar) ** 2)  # or sum([ (yihat - ybar)**2 for yihat in yhat])
+        sstot = np.sum((y_ - ybar) ** 2)  # or sum([ (yi - ybar)**2 for yi in y])
+
+        res['determination'] = ssreg / sstot
+
+        return res
+
+    results = _fit(x, y)
+
+    return results
+
+
 def do_fft(data_td):
     data_td = nan_to_num(data_td)
 
