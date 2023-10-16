@@ -4,6 +4,16 @@ from numpy.fft import fft, fftfreq, ifft, rfftfreq, irfft, rfft
 from mpl_settings import plt
 
 
+def shift_signal(y_td, shift):
+    # shift in ps (unit of t)
+    t_, y = y_td[:, 0].real, y_td[:, 1].real
+    dt = np.mean(np.diff(t_))
+    shift = int(shift / dt)
+    y = np.roll(y, shift)
+
+    return array([t_, y], dtype=float).T
+
+
 def do_fft(data_td):
     data_td = nan_to_num(data_td)
 
@@ -13,7 +23,7 @@ def do_fft(data_td):
     return array([freqs, data_fd]).T
 
 
-def do_ifft(data_fd, hermitian=False, t_=None):
+def do_ifft(data_fd, t_=None):
     freqs, y_fd = data_fd[:, 0].real, data_fd[:, 1]
 
     y_fd = nan_to_num(y_fd)
@@ -45,15 +55,20 @@ def unwrap(data_fd):
 def annot_max(x, y, ax=None, x_unit=None):
     xmax = x[np.argmax(y)]
     ymax = y.max()
-    text= "x={:.4f}".format(xmax)
+    text = "x={:.4f}".format(xmax)
     if x_unit:
         text += f" ({x_unit})"
     if not ax:
-        ax=plt.gca()
+        ax = plt.gca()
     bbox_props = dict(boxstyle="square,pad=0.3", fc="w", ec="k", lw=0.72)
-    arrowprops=dict(arrowstyle="->",connectionstyle="angle,angleA=0,angleB=60")
-    kw = dict(xycoords='data',textcoords="axes fraction",
+    arrowprops = dict(arrowstyle="->", connectionstyle="angle,angleA=0,angleB=60")
+    kw = dict(xycoords='data', textcoords="axes fraction",
               arrowprops=arrowprops, bbox=bbox_props, ha="right", va="top")
-    ax.annotate(text, xy=(xmax, ymax), xytext=(0.94,0.96), **kw)
+    ax.annotate(text, xy=(xmax, ymax), xytext=(0.94, 0.96), **kw)
 
 
+def to_db(data_fd):
+    if data_fd.ndim == 2:
+        return 20 * np.log10(np.abs(data_fd[:, 1]))
+    else:
+        return 20 * np.log10(np.abs(data_fd))
