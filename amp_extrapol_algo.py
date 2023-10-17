@@ -4,7 +4,7 @@ from functions import unwrap, do_fft, do_ifft, polyfit
 
 
 def algo(ref_fd_, sam_fd_):
-    # sam_fd_[:, 1] *= 0.94
+    sam_fd_[:, 1] *= 0.94
 
     f_axis = ref_fd_[:, 0].real
     w = 2 * pi * f_axis
@@ -20,14 +20,13 @@ def algo(ref_fd_, sam_fd_):
 
     N = 4*n_/(n_+1)**2
     f_min_idx, f_max_idx = np.argmin(np.abs(f_axis - 0.1)), np.argmin(np.abs(f_axis - 0.2))
-    x = np.arange(len(n_[f_min_idx:f_max_idx]))
 
-    n0 = polyfit(x, n_[f_min_idx:f_max_idx])["polynomial"][1]
+    n0 = polyfit(f_axis[f_min_idx:f_max_idx], n_[f_min_idx:f_max_idx])["polynomial"][1]
     a0_theo = np.log(4 * n0 / (1 + n0) ** 2)
 
     a = np.abs(sam_fd_[:, 1] / ref_fd_[:, 1])
     loga = np.log(a)
-    a0_exp = polyfit(x, loga[f_min_idx:f_max_idx])["polynomial"][1]
+    a0_exp = polyfit(f_axis[f_min_idx:f_max_idx], loga[f_min_idx:f_max_idx])["polynomial"][1]
 
     axa.plot(f_axis, loga, label="Raw Data")
 
@@ -35,12 +34,12 @@ def algo(ref_fd_, sam_fd_):
 
     ax1_cri.scatter(f_axis, k_raw, label="k extracted", zorder=5, c="red")
     print(a0_exp, a0_theo)
-    a_corr = a - a0_exp + a0_theo
-    loga_corr = np.log(a) - a0_exp + a0_theo
+
+    loga_corr = loga - a0_exp + a0_theo
 
     axa.plot(f_axis, loga_corr, label="Corrected Data")
 
-    k_ = np.log(N / a_corr) * c_THz / (w * d0)
+    k_ = np.log(N / np.exp(loga_corr)) * c_THz / (w * d0)
 
     ax1_cri.plot(f_axis, k_, label="k corrected", zorder=4, c="green", ls="-.", lw=2)
 

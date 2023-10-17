@@ -109,10 +109,10 @@ def t_sample_sim(f, en_plot=False):
     n1_r, n1_i = np.ones_like(f), np.zeros_like(f)
 
     n1_r[:f_max] = np.linspace(n_min, n_max, f_max)
-    #n1_r[:f_max] += 0.25*np.sin(0.01*np.arange(f_max))
+    n1_r[:f_max] += 0.25*np.sin(0.01*np.arange(f_max))
 
     n1_i[:f_max] = np.linspace(k_min, k_max, f_max)
-    #n1_i[:f_max] += 0.025 * np.sin(0.05 * np.arange(f_max) + 2)
+    n1_i[:f_max] += 0.010 * np.sin(0.05 * np.arange(f_max) + 2)
 
     peak = (1 / np.pi) * (width / ((f - 1) ** 2 + width ** 2))
     n1_i = n1_i + peak * abs_peak_scale
