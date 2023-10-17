@@ -4,6 +4,8 @@ from functions import unwrap, do_fft, do_ifft, polyfit
 
 
 def algo(ref_fd_, sam_fd_):
+    # sam_fd_[:, 1] *= 0.94
+
     f_axis = ref_fd_[:, 0].real
     w = 2 * pi * f_axis
 
@@ -13,37 +15,34 @@ def algo(ref_fd_, sam_fd_):
     phi = phi_sam[:, 1] - phi_ref[:, 1]
 
     n_ = 1 + c_THz * phi / (w * d0)
-
     n_ = np.nan_to_num(n_, nan=n_[10])
+    ax0_cri.scatter(f_axis, n_, label="n extracted", zorder=5, c="red")
 
     N = 4*n_/(n_+1)**2
-    a = np.abs(sam_fd_[:, 1]/ref_fd_[:, 1])
-    loga = np.log(a)
-
     f_min_idx, f_max_idx = np.argmin(np.abs(f_axis - 0.1)), np.argmin(np.abs(f_axis - 0.2))
-
-    ax0_cri.plot(f_axis, n_, label="n extracted")
-
     x = np.arange(len(n_[f_min_idx:f_max_idx]))
-    res = polyfit(x, n_[f_min_idx:f_max_idx])
-    n0 = res["polynomial"][1]
+
+    n0 = polyfit(x, n_[f_min_idx:f_max_idx])["polynomial"][1]
     a0_theo = np.log(4 * n0 / (1 + n0) ** 2)
 
-    res = polyfit(x, loga[f_min_idx:f_max_idx])
-    a0_exp = res["polynomial"][1]
+    a = np.abs(sam_fd_[:, 1] / ref_fd_[:, 1])
+    loga = np.log(a)
+    a0_exp = polyfit(x, loga[f_min_idx:f_max_idx])["polynomial"][1]
 
-    print(res["polynomial"])
-    axa.plot(f_axis, loga, label="log(A)")
+    axa.plot(f_axis, loga, label="Raw Data")
 
     k_raw = np.log(N / a) * c_THz / (w * d0)
 
-    ax1_cri.plot(f_axis, k_raw, label="k extracted")
+    ax1_cri.scatter(f_axis, k_raw, label="k extracted", zorder=5, c="red")
+    print(a0_exp, a0_theo)
+    a_corr = a - a0_exp + a0_theo
+    loga_corr = np.log(a) - a0_exp + a0_theo
 
-    a = a - a0_exp + a0_theo
+    axa.plot(f_axis, loga_corr, label="Corrected Data")
 
-    k_ = np.log(N / a) * c_THz / (w * d0)
+    k_ = np.log(N / a_corr) * c_THz / (w * d0)
 
-    ax1_cri.plot(f_axis, k_raw, label="k corrected")
+    ax1_cri.plot(f_axis, k_, label="k corrected", zorder=4, c="green", ls="-.", lw=2)
 
     return n_, k_
 
@@ -71,9 +70,6 @@ def main():
     ax1_sig.plot(f_axis, phi_s, label="Sample")
 
     n, k = algo(ref_fd, sam_fd)
-
-
-
 
 
 

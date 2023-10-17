@@ -22,33 +22,34 @@ sam_shift = 0.105  # PTFE 31.5 um
 # sam_shift = 0.050
 # sam_shift = 0
 
-n_min, n_max = 1.4, 1.45
+n_min, n_max = 2.58, 2.65
 # k_min, k_max = 0.00, 0.035
-k_min, k_max = 0.07, 0.09
+# k_min, k_max = 0.075, 0.09
+k_min, k_max = 0.095, 0.09
 
 # absorption peak
 width = 5E-3
-abs_peak_scale = 5E-4
+abs_peak_scale = 1E-3
 
 # incident angle
 theta_i = 8 * np.pi / 180
 
 # slab thickness (mm)
-d0 = 10.0
+d0 = 0.5
 
-fig, (ax0_cri, ax1_cri, ax2_cri) = plt.subplots(3, 1)
+_, (ax0_cri, ax1_cri, ax2_cri) = plt.subplots(3, 1)
 ax0_cri.set_ylabel("Real part")
 ax2_cri.set_xlabel("Frequency (THz)")
 ax1_cri.set_ylabel("Imaginary part")
 ax2_cri.set_ylabel("Absorption coefficient (1/cm)")
-ax0_cri.set_xlim((-0.1, 8))
-ax1_cri.set_xlim((-0.1, 8))
-ax2_cri.set_xlim((-0.1, 8))
+ax0_cri.set_xlim((-0.1, 2))
+ax1_cri.set_xlim((-0.1, 2))
+ax2_cri.set_xlim((-0.1, 2))
 ax0_cri.set_ylim((0.5, 3.5))
 ax1_cri.set_ylim((-0.01, 0.15))
-ax2_cri.set_ylim((-1, 110))
+ax2_cri.set_ylim((-1, 60))
 
-fig_, (ax0_sig, ax1_sig, ax2_sig) = plt.subplots(3, 1)
+_, (ax0_sig, ax1_sig, ax2_sig) = plt.subplots(3, 1)
 ax0_sig.set_xlabel("Time (ps)")
 ax0_sig.set_ylabel("Amplitude (arb. u.)")
 ax0_sig.xaxis.set_label_position('top')
@@ -60,9 +61,11 @@ ax1_sig.set_xlim((-0.1, 8))
 # ax1_sig.set_ylim((-np.pi, np.pi))
 ax2_sig.set_xlim((-0.1, 15))
 
-fig_, (axa) = plt.subplots(1, 1)
+_, (axa) = plt.subplots(1, 1)
 axa.set_xlabel("Frequency (THz)")
-axa.set_xlim((-0.1, 8))
+axa.set_ylabel("log(A)")
+axa.set_xlim((-0.1, 2))
+
 
 def refl_sample_sim(f, en_plot=True, pol="s"):
     n0 = 1 + 1j * 0
@@ -106,7 +109,10 @@ def t_sample_sim(f, en_plot=False):
     n1_r, n1_i = np.ones_like(f), np.zeros_like(f)
 
     n1_r[:f_max] = np.linspace(n_min, n_max, f_max)
+    #n1_r[:f_max] += 0.25*np.sin(0.01*np.arange(f_max))
+
     n1_i[:f_max] = np.linspace(k_min, k_max, f_max)
+    #n1_i[:f_max] += 0.025 * np.sin(0.05 * np.arange(f_max) + 2)
 
     peak = (1 / np.pi) * (width / ((f - 1) ** 2 + width ** 2))
     n1_i = n1_i + peak * abs_peak_scale
@@ -121,8 +127,8 @@ def t_sample_sim(f, en_plot=False):
     alpha = 10 * 4 * np.pi * n1.imag * f / c_THz
 
     if en_plot:
-        ax0_cri.plot(f, n1.real, label="n actual")
-        ax1_cri.plot(f, n1.imag, label="k actual")
+        ax0_cri.plot(f, n1.real, label="n actual", ls="solid")
+        ax1_cri.plot(f, n1.imag, label="k actual", ls="solid")
         ax2_cri.plot(f, alpha, label="Absorption coefficient (truth)")
 
     return t_
