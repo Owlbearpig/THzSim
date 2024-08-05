@@ -45,7 +45,7 @@ ax2_cri.set_ylabel("Absorption coefficient (1/cm)")
 ax0_cri.set_xlim((-0.1, 2))
 ax1_cri.set_xlim((-0.1, 2))
 ax2_cri.set_xlim((-0.1, 2))
-ax0_cri.set_ylim((0.5, 3.5))
+ax0_cri.set_ylim((2, 3.5))
 ax1_cri.set_ylim((-0.01, 0.15))
 ax2_cri.set_ylim((-1, 60))
 
@@ -65,6 +65,7 @@ _, (axa) = plt.subplots(1, 1)
 axa.set_xlabel("Frequency (THz)")
 axa.set_ylabel("log(A)")
 axa.set_xlim((-0.1, 2))
+axa.set_ylim((-4, 0.1))
 
 
 def refl_sample_sim(f, en_plot=True, pol="s"):
@@ -119,7 +120,7 @@ def t_sample_sim(f, en_plot=False):
 
     n1 = n1_r + 1j * n1_i
 
-    t01_ = 2*n0 / (n0+n1)
+    t01_ = 2 * n0 / (n0 + n1)
     t12_ = 2 * n1 / (n0 + n1)
 
     t_ = t01_ * t12_ * exp(1j*d0*w*n1/c_THz)

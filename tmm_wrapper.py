@@ -18,7 +18,7 @@ def tmm_package_wrapper(freqs=None, d_list=None, n=None, geom="r", angle=8, pol=
     for i, lambda_vac in enumerate(lambda_vacs):
         n_list = n[i]
         r_list.append(coh_tmm(pol, n_list, d_list, angle_in, lambda_vac)[geom])
-    r_arr = -(geom == "r") * array(r_list)
+    r_arr = (geom == "r") * array(r_list)
 
     r_arr = nan_to_num(r_arr)
 
